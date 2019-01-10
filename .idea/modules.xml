@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/livestream.iml" filepath="$PROJECT_DIR$/.idea/modules/livestream.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/livestream_main.iml" filepath="$PROJECT_DIR$/.idea/modules/livestream_main.iml" group="livestream" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/livestream_test.iml" filepath="$PROJECT_DIR$/.idea/modules/livestream_test.iml" group="livestream" />
+    </modules>
+  </component>
+</project>
