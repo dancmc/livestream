@@ -1,6 +1,6 @@
 package io.dancmc.livestream
 
-import java.nio.ByteBuffer
+import java.io.File
 
 
 class MainActivity {
@@ -10,11 +10,23 @@ class MainActivity {
         fun main(args:Array<String>){
 
             if(args[0]=="server"){
-                ServerStream()
+                ServerStream().start()
             }else{
-                Client()
+                Client().start()
             }
 
+            val gui = Gui()
+
+//            val fileArray = IntRange(1,60).map { "/users/daniel/downloads/t$it.jpg" }
+//
+//
+//            fileArray.forEach {f->
+//                val file = File(f)
+//
+//                gui.setImage(file.readBytes())
+//
+//                Thread.sleep(200)
+//            }
 
 
         }

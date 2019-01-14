@@ -14,17 +14,15 @@ open class Connection(val socket:Socket) :Thread(){
     private var bArray = ByteArray(8)
 
 
-    init {
-        start()
-    }
-
     override fun run() {
         try {
 
-            inStream.readFully(bArray)
-            while (!term ) {
-                println(bArray)
-                inStream.readFully(bArray)
+//            inStream.readFully(bArray)
+            var s = inStream.readLine()
+            while (!term && s!=null) {
+                println(s)
+//                inStream.readFully(bArray)
+                s = inStream.readLine()
             }
         }catch(e:IOException){
             println(e.message)

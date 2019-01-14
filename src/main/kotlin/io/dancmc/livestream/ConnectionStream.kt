@@ -2,6 +2,8 @@ package io.dancmc.livestream
 
 import java.io.*
 import java.net.Socket
+import javax.swing.ImageIcon
+import javax.swing.JLabel
 
 class ConnectionStream(socket: Socket) : Connection(socket) {
 
@@ -19,12 +21,15 @@ class ConnectionStream(socket: Socket) : Connection(socket) {
 
             while (!term) {
                 try {
-                    val intSize = inStream.read(lengthByteArray.array)
-                    if (intSize == 8) {
+//                    val intSize = inStream.read(lengthByteArray.array)
+                    val line = inStream.readLine()
 
-                        val file = File("/users/daniel/downloads/t$fileNum.png")
+                    if (line!=null) {
+                        val intSize = line.toInt()
+                        val file = File("/users/daniel/downloads/t$fileNum.jpg")
 
-                        val imageByteSize = lengthByteArray.getInt()
+//                        val imageByteSize = lengthByteArray.getInt()
+                        val imageByteSize = intSize
                         var remainingBytes = imageByteSize
                         var currentBuffer = imageByteArray
 
@@ -41,10 +46,15 @@ class ConnectionStream(socket: Socket) : Connection(socket) {
                             }
                             remainingBytes -= currentBuffer.array.size
 
+
                         }
 
                         fileNum++
 
+                    } else {
+                        println("line is null")
+                        Control.getInstance().connections.remove(this)
+                        term = true
                     }
                 } catch (e: Exception) {
                     println("Exception "+ e.message)
@@ -55,6 +65,7 @@ class ConnectionStream(socket: Socket) : Connection(socket) {
         } catch (e: IOException) {
             println("IOException "+e.message)
         }
+        println("Connection stream terminated")
     }
 
     override fun writeBytes(bytes: ByteArray) {

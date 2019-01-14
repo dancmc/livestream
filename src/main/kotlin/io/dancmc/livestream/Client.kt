@@ -6,9 +6,6 @@ import java.nio.ByteBuffer
 
 class Client : Thread() {
 
-    init {
-        start()
-    }
 
     override fun run() {
         val c = Control.getInstance().outgoingConnection(Socket("localhost", 7878))
@@ -16,6 +13,7 @@ class Client : Thread() {
 //        sleep(4000)
 //        c.writeBytes("bye byedasasdadasd".toByteArray())
 
+//        val bb = ByteBuffer.allocate(8).putInt(33267).array()
 
         val fileArray = arrayOf("/users/daniel/downloads/IMG_1841.png", "/users/daniel/downloads/IMG_1846.png")
 
@@ -23,7 +21,8 @@ class Client : Thread() {
             val file = File(f)
             val size = file.length()
 
-            c.writeBytes(ByteBuffer.allocate(8).putInt(size.toInt()).array())
+//            c.writeBytes(ByteBuffer.allocate(8).putInt(size.toInt()).array())
+            c.writeBytes((size.toString()+"\n").toByteArray())
 
             file.inputStream().use {
                 var remaining = size

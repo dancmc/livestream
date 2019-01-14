@@ -9,9 +9,6 @@ class Server : Thread() {
     private val serverSocket = ServerSocket(7878)
     private var term = false
 
-    init {
-        start()
-    }
 
     override fun run() {
         while (!term) {
