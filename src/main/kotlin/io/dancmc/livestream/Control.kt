@@ -24,8 +24,8 @@ class Control : Thread() {
         }
     }
 
-    fun incomingStream(socket: Socket):ConnectionStream{
-        return ConnectionStream(socket).apply {
+    fun incomingStream(socket: Socket, writeToFile:Boolean):ConnectionStream{
+        return ConnectionStream(socket, writeToFile).apply {
             connections.add(this)
             this.start()
         }

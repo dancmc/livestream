@@ -4,7 +4,7 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
-class ServerStream : Thread() {
+class ServerStream(val writeToFile:Boolean=true) : Thread() {
 
     private val serverSocket = ServerSocket(7878)
     private var term = false
@@ -16,7 +16,7 @@ class ServerStream : Thread() {
             try {
                 // client socket could be a server or client connecting, but unknown which at this point
                 clientSocket = serverSocket.accept()
-                Control.getInstance().incomingStream(clientSocket)
+                Control.getInstance().incomingStream(clientSocket, writeToFile)
 
             } catch (e: IOException) {
                 term = true
