@@ -1,9 +1,11 @@
-package io.dancmc.livestream
+package io.dancmc.livestream.testing
 
+import io.dancmc.livestream.connection.Control
 import java.io.File
 import java.net.Socket
-import java.nio.ByteBuffer
 
+
+// just a test class
 class Client : Thread() {
 
 

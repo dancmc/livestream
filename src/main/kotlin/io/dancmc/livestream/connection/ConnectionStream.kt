@@ -1,25 +1,37 @@
-package io.dancmc.livestream
+package io.dancmc.livestream.connection
 
+import io.dancmc.livestream.MainActivity
+import io.dancmc.livestream.gui.Gui
+import io.dancmc.livestream.utils.*
+import tornadofx.View
+import tornadofx.find
 import java.io.*
 import java.net.Socket
-import javax.swing.ImageIcon
-import javax.swing.JLabel
+import java.util.*
 
 class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connection(socket) {
 
-    private val inStream = DataInputStream(socket.getInputStream())
-    private val outStream = BufferedOutputStream(DataOutputStream(socket.getOutputStream()))
-    private var term = false
-    private var lengthByteArray = ByteClass(8)
+
     private var initialImageBufferSize = 500000
     private var imageByteArray = ByteClass(initialImageBufferSize)
-    private var fileNum = 0
+    private var imageByteArrayPool = ByteArrayPool(5,100000)
 
+    private var fileNum = 0
     private var framecount = 0
     private var lastTime = 0L
 
+    private lateinit  var encoder : VideoEncoder
+    private val frameQueue = VideoFrameQueue()
+
+    val view:Gui = find(Gui::class)
+
     override fun run() {
-        println("Starting connection from ${socket.remoteSocketAddress}")
+        Utils.log("Starting connection from ${socket.remoteSocketAddress}")
+        encoder = VideoEncoder(frameQueue, UUID.randomUUID().toString())
+        encoder.start()
+
+
+
         try {
 
             while (!term) {
@@ -42,9 +54,11 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
                                     }
                                     inStream.readFully(currentBuffer.array)
 
+                                    // starting new file
                                     if (remainingBytes == imageByteSize) {
                                         currentBuffer.writeToFile(file)
                                     } else {
+                                        // otherwise append to current file
                                         currentBuffer.writeToFile(file, append = true)
                                     }
                                     remainingBytes -= currentBuffer.array.size
@@ -54,10 +68,10 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
 
                                 fileNum++
                             } else {
-                                val imageBytes = ByteArray(imageByteSize)
-                                inStream.readFully(imageBytes)
-                                MainActivity.gui.setImage(imageBytes)
-                                println("Frame")
+                                val imageBytes = imageByteArrayPool.getArray()
+                                inStream.readFully(imageBytes,0,imageByteSize)
+                                view.setImage(imageByteArrayPool, imageBytes)
+//                                frameQueue.addFrame(imageBytes)
 
 
 
@@ -65,7 +79,7 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
 
                                 if(currentTime - lastTime>=1000){
                                     lastTime = if(currentTime - lastTime>2000)currentTime else lastTime+1000
-                                    println(framecount)
+                                    Utils.log("$framecount fps")
                                     framecount = 1
                                 } else {
                                     framecount++
@@ -73,12 +87,12 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
                             }
 
                         } else {
-                            println("line is null")
+                            Utils.log("line is null")
                             Control.getInstance().connections.remove(this)
                             term = true
                         }
                     } catch (e: Exception) {
-                        println("Exception " + e.message)
+                        Utils.log("Exception " + e.message)
                     }
             }
 
@@ -86,9 +100,20 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
 
 
         } catch (e: IOException) {
-            println("IOException "+e.message)
+            Utils.log("IOException "+e.message)
         }
-        println("Connection stream terminated")
+        Utils.log("Connection stream terminated")
+
+
+        while(frameQueue.queue.isNotEmpty()){
+            sleep(100)
+        }
+        encoder.term = true
+        frameQueue.addFrame("q\n".toByteArray())
+
+
+
+
     }
 
     override fun writeBytes(bytes: ByteArray) {

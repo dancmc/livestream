@@ -1,15 +1,17 @@
-package io.dancmc.livestream
+package io.dancmc.livestream.connection
 
+import io.dancmc.livestream.testing.ConnectionText
 import java.net.Socket
 
 class Control : Thread() {
 
     companion object {
 
-        var control:Control? = null
+        var control: Control? = null
 
-        fun getInstance():Control{
-            return control?:Control().apply {
+        fun getInstance(): Control {
+            return control
+                    ?: Control().apply {
                 control = this
             }
         }
@@ -17,21 +19,21 @@ class Control : Thread() {
 
     val connections = ArrayList<Connection>()
 
-    fun incomingConnection(socket: Socket):Connection{
-        return Connection(socket).apply {
+    fun incomingTextConnection(socket: Socket): Connection {
+        return ConnectionText(socket).apply {
             connections.add(this)
             this.start()
         }
     }
 
-    fun incomingStream(socket: Socket, writeToFile:Boolean):ConnectionStream{
+    fun incomingStreamConnection(socket: Socket, writeToFile:Boolean): ConnectionStream {
         return ConnectionStream(socket, writeToFile).apply {
             connections.add(this)
             this.start()
         }
     }
 
-    fun outgoingConnection(socket: Socket):Connection{
+    fun outgoingConnection(socket: Socket): Connection {
         return Connection(socket).apply {
             connections.add(this)
             this.start()

@@ -1,10 +1,10 @@
-package io.dancmc.livestream
+package io.dancmc.livestream.connection
 
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
-class Server : Thread() {
+class ServerStream(val writeToFile:Boolean=true) : Thread() {
 
     private val serverSocket = ServerSocket(7878)
     private var term = false
@@ -16,7 +16,7 @@ class Server : Thread() {
             try {
                 // client socket could be a server or client connecting, but unknown which at this point
                 clientSocket = serverSocket.accept()
-                Control.getInstance().incomingConnection(clientSocket)
+                Control.getInstance().incomingStreamConnection(clientSocket, writeToFile)
 
             } catch (e: IOException) {
                 term = true

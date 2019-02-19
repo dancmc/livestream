@@ -1,4 +1,4 @@
-package io.dancmc.livestream
+package io.dancmc.livestream.utils
 
 import java.io.File
 import java.nio.ByteBuffer

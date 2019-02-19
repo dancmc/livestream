@@ -1,36 +1,56 @@
 package io.dancmc.livestream
 
-import java.io.File
-import java.util.*
+
+import io.dancmc.livestream.connection.ServerStream
+import io.dancmc.livestream.gui.Gui
+import io.dancmc.livestream.testing.Client
+import io.dancmc.livestream.utils.SSDP
+import sun.applet.Main
+import tornadofx.App
+import tornadofx.launch
+import java.util.concurrent.Executors
 
 
-class MainActivity {
+fun main(args:Array<String>){
+
+    if(args.isNotEmpty() && args[0]=="client"){
+        Client().start()
+    }else{
+        ServerStream(false).start()
+    }
+
+    // for Magic leap clients to discover the server address
+    SSDP(Executors.newSingleThreadExecutor(), SSDP.TYPE.SERVER) {
+
+        MainActivity.ssdpRunning = false
+
+        // TODO reflect in GUI
+
+    }
+
+    // Just for demonstrating the service discovery
+    SSDP(Executors.newSingleThreadExecutor(), SSDP.TYPE.CLIENT)
+
+    launch<MainActivity>(args)
+
+}
+
+class MainActivity:App(Gui::class) {
+
+
 
     companion object {
 
-        @JvmField
-        val gui:Gui = Gui()
-
-        @JvmStatic
-        fun main(args:Array<String>){
-
-            if(args[0]=="server"){
-                ServerStream(false).start()
-            }else{
-                Client().start()
-            }
-
-           /* val fileArray = IntRange(1,60).map { "/users/daniel/downloads/t$it.jpg" }
-
-            fileArray.forEach {f->
-                val file = File(f)
-                gui.setImage(file.readBytes())
-
-                Thread.sleep(200)
-            }*/
+        var ssdpRunning = true
 
 
-        }
     }
+
+    init {
+
+
+    }
+
+
 
 }
