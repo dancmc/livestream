@@ -3,13 +3,12 @@ package io.dancmc.livestream.connection
 import io.dancmc.livestream.MainActivity
 import io.dancmc.livestream.gui.Gui
 import io.dancmc.livestream.utils.*
-import tornadofx.View
 import tornadofx.find
 import java.io.*
 import java.net.Socket
 import java.util.*
 
-class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connection(socket) {
+class IncomingStream(socket: Socket) : Connection(socket) {
 
 
     private var initialImageBufferSize = 500000
@@ -23,7 +22,7 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
     private lateinit  var encoder : VideoEncoder
     private val frameQueue = VideoFrameQueue()
 
-    val view:Gui = find(Gui::class)
+    private val view:Gui = find(Gui::class)
 
     override fun run() {
         Utils.log("Starting connection from ${socket.remoteSocketAddress}")
@@ -43,7 +42,7 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
                             val imageByteSize = line.toInt()
                             val file = File("/users/daniel/downloads/t$fileNum.jpg")
 
-                            if(writeToFile) {
+                            if(MainActivity.writeJpegs) {
 
                                 var remainingBytes = imageByteSize
                                 var currentBuffer = imageByteArray
@@ -103,6 +102,7 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
             Utils.log("IOException "+e.message)
         }
         Utils.log("Connection stream terminated")
+        view.notifyStreamTerminated()
 
 
         while(frameQueue.queue.isNotEmpty()){
@@ -116,8 +116,4 @@ class ConnectionStream(socket: Socket, val writeToFile:Boolean=true) : Connectio
 
     }
 
-    override fun writeBytes(bytes: ByteArray) {
-        outStream.write(bytes)
-        outStream.flush()
-    }
 }

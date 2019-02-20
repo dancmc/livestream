@@ -1,11 +1,15 @@
 package io.dancmc.livestream
 
 
-import io.dancmc.livestream.connection.ServerStream
+import io.dancmc.livestream.connection.Control
+import io.dancmc.livestream.connection.Server
 import io.dancmc.livestream.gui.Gui
 import io.dancmc.livestream.testing.Client
 import io.dancmc.livestream.utils.SSDP
-import sun.applet.Main
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
 import java.util.concurrent.Executors
@@ -16,7 +20,7 @@ fun main(args:Array<String>){
     if(args.isNotEmpty() && args[0]=="client"){
         Client().start()
     }else{
-        ServerStream(false).start()
+        Control.getInstance().startNewServer()
     }
 
     // for Magic leap clients to discover the server address
@@ -43,12 +47,18 @@ class MainActivity:App(Gui::class) {
 
         var ssdpRunning = true
 
+        var writeJpegs = false
+        var serverPort = SimpleIntegerProperty(7878)
+        var serverIP = SimpleStringProperty("0.0.0.0")
+        var serverConnected = SimpleBooleanProperty(false)
 
     }
 
-    init {
+    override fun start(stage: Stage) {
 
-
+        stage.minWidth = Gui.stageMinWidth
+        stage.minHeight = Gui.stageMinHeight
+        super.start(stage)
     }
 
 

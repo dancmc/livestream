@@ -1,5 +1,6 @@
 package io.dancmc.livestream.utils
 
+import io.dancmc.livestream.MainActivity
 import java.lang.Thread.sleep
 import java.net.*
 import java.util.concurrent.ExecutorService
@@ -39,7 +40,7 @@ class SSDP(val executor: ExecutorService, val type: TYPE, val serverShutdownCall
 
                             if(message.startsWith("ml-stream-locate")){
                                 Utils.log(message)
-                                val reply = "ml-stream-server ${InetAddress.getLocalHost().hostAddress}:7878".toByteArray()
+                                val reply = "ml-stream-server ${InetAddress.getLocalHost().hostAddress}:${MainActivity.serverPort.value}".toByteArray()
                                 socket.send(DatagramPacket(reply, reply.size,address, 1900))
                             }
 
