@@ -1,14 +1,20 @@
 package io.dancmc.livestream.utils
 
 import java.util.*
+import kotlin.collections.ArrayList
 
-class VideoFrameQueue :java.lang.Object(){
+class FramePool(number:Int, size:Int) :java.lang.Object(){
 
-    val queue = LinkedList<Frame>()
+    private val queue = LinkedList<Frame>().apply {
+        repeat(number){
+            this.add(Frame(ByteArray(size), -1).apply
+            { this.pool = this@FramePool })
+        }
+    }
 
     @Synchronized
     public fun addFrame(frame:Frame){
-        queue.add(frame)
+        queue.add(frame);
         notify()
     }
 

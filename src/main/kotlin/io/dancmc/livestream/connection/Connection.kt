@@ -19,10 +19,15 @@ open class Connection(val socket:Socket) :Thread(){
            println("Formed Connection")
            val line = inStream.readLine()
            println(line)
-           when(line){
+           val success = when(line){
                "producer"->Control.getInstance().incomingStreamConnection(socket)
 //               "consumer"->
-               else->socket.close()
+               else->false
+           }
+
+           if(!success){
+               writeBytes("Connection rejected".toByteArray())
+               socket.close()
            }
 
        } catch(e:IOException){

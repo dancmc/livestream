@@ -35,8 +35,7 @@ class Server : Thread() {
 
         serverSocket?.use {ss->
 
-            MainActivity.serverConnected.value = true
-            MainActivity.serverIP.value = InetAddress.getLocalHost().hostAddress
+            Control.getInstance().serverConnected()
 
             Utils.log("Started listening on ${MainActivity.serverIP.value}:${MainActivity.serverPort.value}")
 
@@ -55,10 +54,15 @@ class Server : Thread() {
             }
         }
 
+        Control.getInstance().serverDisconnected()
+
     }
 
-    override fun interrupt() {
-        serverSocket?.close()
-        super.interrupt()
+    fun shutdown(){
+        serverSocket?.let {
+            if(!it.isClosed){
+                it.close()
+            }
+        }
     }
 }

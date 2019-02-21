@@ -1,5 +1,6 @@
 package io.dancmc.livestream.utils
 
+import io.dancmc.livestream.MainActivity
 import java.io.File
 import java.io.OutputStreamWriter
 import java.io.BufferedWriter
@@ -8,14 +9,31 @@ import java.io.BufferedReader
 import java.util.*
 
 
-class VideoEncoder(val queue: VideoFrameQueue, val videoName:String) :Thread(){
+class VideoEncoder(val videoName:String) :Thread(){
+
+    companion object {
+        val VIDEO_FRAME = 0
+        val VIDEO_END = 0
+    }
 
     lateinit var process:Process
+    val queue = VideoFrameQueue()
     var term = false
 
     override fun run() {
+
+        MainActivity.recordingStarted.uiSet(true)
+        setUncaughtExceptionHandler { _, _ ->
+            MainActivity.recordingStarted.uiSet(false)
+        }
+
         val builder = ProcessBuilder("ffmpeg", "-y", "-f", "image2pipe","-vcodec", "mjpeg", "-r", "24", "-i", "-", "-vcodec", "libx264", "-preset","medium","-crf","24", "-r", "24", "$videoName.mp4")
-        builder.directory(File("/users/daniel/downloads"))
+
+        val downloads = File("/users/daniel/downloads")
+        if(downloads.exists()){
+            builder.directory(downloads)
+        }
+
         builder.redirectErrorStream(true)
         process = builder.start()
 
@@ -30,10 +48,14 @@ class VideoEncoder(val queue: VideoFrameQueue, val videoName:String) :Thread(){
         while(!term){
             try {
                 val frame = queue.getFrame()
-                stdin.write(frame)
-                stdin.flush()
+                if(frame.extra == VIDEO_FRAME) {
+                    stdin.write(frame.byteArray)
+                    stdin.flush()
+                    println("Wrote frame")
+                }
+                frame.encoded = true
 
-                println("Wrote frame")
+
             }catch(e:Exception){
                 println(e.message)
             }
@@ -45,11 +67,14 @@ class VideoEncoder(val queue: VideoFrameQueue, val videoName:String) :Thread(){
 //            }
         }
 
-
-
+        stdin.write("q\n".toByteArray())
         process.destroy()
 
+        MainActivity.recordingStarted.uiSet(false)
+
     }
+
+
 
 
 }
