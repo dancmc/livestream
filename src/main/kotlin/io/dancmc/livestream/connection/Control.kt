@@ -2,6 +2,7 @@ package io.dancmc.livestream.connection
 
 import io.dancmc.livestream.MainActivity
 import io.dancmc.livestream.testing.ConnectionText
+import io.dancmc.livestream.utils.Frame
 import io.dancmc.livestream.utils.Utils
 import tornadofx.runLater
 import java.net.InetAddress
@@ -16,48 +17,67 @@ class Control private constructor() {
         fun getInstance(): Control {
             return control
                     ?: Control().apply {
-                control = this
+                        control = this
+                    }
+        }
+    }
+
+    private var server: Server? = null
+    private var serverLocked = false
+    private var serverPending: (() -> Unit)? = null
+    private var producer: ProducerStream? = null
+    private var consumer: ConsumerStream? = null
+
+
+    // to prevent GUI race conditions
+    fun startNewServer() {
+
+        if (!serverLocked) {
+            serverLocked = true
+
+            serverPending = {
+                serverPending = null
+                server= Server()
+                server?.start()
+                serverLocked = false
+
             }
+
+            if (server != null) {
+                server?.shutdown()
+                Utils.log("Stopped listening")
+            } else {
+                serverDisconnected()
+            }
+
         }
     }
 
-    private var server:Server?=null
-    private var producer:IncomingStream? = null
-    private var consumer:Connection? = null
-
-    fun startNewServer(){
-        server?.let {
-            it.shutdown()
-            Utils.log("Stopped listening")
-        }
-
-        server = Server()
-        server?.start()
-    }
-
-    fun serverConnected(){
+    fun serverConnected() {
         runLater {
             MainActivity.serverConnected.value = true
             MainActivity.serverIP.value = InetAddress.getLocalHost().hostAddress
         }
+
     }
 
-    fun serverDisconnected(){
+    fun serverDisconnected() {
         runLater {
             MainActivity.serverConnected.value = false
             MainActivity.serverIP.value = "-"
         }
+        server=null
+        serverPending?.invoke()
     }
 
 
+    fun newProducerConnection(socket: Socket): Boolean {
 
-    fun incomingStreamConnection(socket: Socket) :Boolean{
-
-        if(producer!=null){
+        if (producer != null) {
             return false
         }
 
-        producer = IncomingStream(socket).apply {
+        producer = ProducerStream(socket).apply {
             runLater {
                 MainActivity.producerIP.set(socket.inetAddress.hostAddress)
                 MainActivity.producerPort.set(socket.port)
@@ -68,7 +88,7 @@ class Control private constructor() {
         return true
     }
 
-    fun disconnectProducer(){
+    fun disconnectProducer() {
         producer?.shutdown()
         producer = null
 
@@ -80,12 +100,49 @@ class Control private constructor() {
 
     }
 
-    fun startRecording(){
+    fun startRecording() {
         producer?.startVideoEncoder()
     }
 
-    fun stopRecording(){
+    fun stopRecording() {
         producer?.stopVideoEncoder()
+    }
+
+    fun newConsumerConnection(socket: Socket):Boolean{
+        if(consumer!=null){
+            return false
+        }
+
+        consumer = ConsumerStream(socket).apply {
+            runLater {
+                MainActivity.consumerIP.set(socket.inetAddress.hostAddress)
+                MainActivity.consumerPort.set(socket.port)
+                MainActivity.consumerConnected.set(true)
+            }
+            this.start()
+        }
+        return true
+
+    }
+
+    fun disconnectConsumer() {
+        consumer?.shutdown()
+        consumer = null
+
+        runLater {
+            MainActivity.consumerIP.set("-")
+            MainActivity.consumerPort.set(0)
+            MainActivity.consumerConnected.set(false)
+        }
+    }
+
+    fun sendFrameToConsumer(frame: Frame){
+        if(consumer!=null){
+            consumer?.addFrameToQueue(frame)
+        } else{
+            frame.sent = true
+        }
+
     }
 
     fun outgoingConnection(socket: Socket): Connection {

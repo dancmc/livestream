@@ -59,6 +59,7 @@ class Server : Thread() {
     }
 
     fun shutdown(){
+        term=true
         serverSocket?.let {
             if(!it.isClosed){
                 it.close()

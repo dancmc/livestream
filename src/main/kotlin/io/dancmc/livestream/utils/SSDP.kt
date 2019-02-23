@@ -40,8 +40,10 @@ class SSDP(val executor: ExecutorService, val type: TYPE, val serverShutdownCall
 
                             if(message.startsWith("ml-stream-locate")){
                                 Utils.log(message)
-                                val reply = "ml-stream-server ${InetAddress.getLocalHost().hostAddress}:${MainActivity.serverPort.value}".toByteArray()
-                                socket.send(DatagramPacket(reply, reply.size,address, 1900))
+                                val reply = "ml-stream-server ${InetAddress.getLocalHost().hostAddress}:${MainActivity.serverPort.value}"
+                                        val replyBytes = reply.toByteArray()
+                                Utils.log(reply)
+                                socket.send(DatagramPacket(replyBytes, replyBytes.size,address, 1900))
                             }
 
                         } catch (e: SocketTimeoutException) {

@@ -42,6 +42,10 @@ class MainActivity:App(Gui::class) {
         var producerPort = SimpleIntegerProperty(0)
         var producerConnected = SimpleBooleanProperty(false)
 
+        var consumerIP = SimpleStringProperty("-")
+        var consumerPort = SimpleIntegerProperty(0)
+        var consumerConnected = SimpleBooleanProperty(false)
+
         // only checked at beginning of new producer connection
         var automaticRecording = SimpleBooleanProperty(false)
         var recordingStarted = SimpleBooleanProperty(false)

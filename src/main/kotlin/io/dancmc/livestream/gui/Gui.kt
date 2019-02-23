@@ -118,7 +118,7 @@ class Gui : View() {
                 spacing = 5.0
                 padding = Insets(5.0)
 
-                label("Sender Status")
+                label("Producer Status")
 
                 circle {
                     radius = 5.0
@@ -134,6 +134,31 @@ class Gui : View() {
                 button("Disconnect"){
                     action {
                         Control.getInstance().disconnectProducer()
+                    }
+                }
+            }
+
+            hbox{
+                alignment = Pos.CENTER_LEFT
+                spacing = 5.0
+                padding = Insets(5.0)
+
+                label("Consumer Status")
+
+                circle {
+                    radius = 5.0
+                    fillProperty().bind(Bindings.`when`(MainActivity.consumerConnected).then(Color.GREEN).otherwise(Color.RED))
+                    stroke = Color.BLACK
+
+                }
+
+                label("IP : ")
+                text (MainActivity.consumerIP)
+                label ("Port : ")
+                label(MainActivity.consumerPort)
+                button("Disconnect"){
+                    action {
+                        Control.getInstance().disconnectConsumer()
                     }
                 }
             }
@@ -430,7 +455,7 @@ class Gui : View() {
     }
 
 
-    fun notifyStreamTerminated() {
+    fun notifyProducerStreamTerminated() {
         resizeOnNewStream = true
     }
 

@@ -2,9 +2,9 @@ package io.dancmc.livestream.utils
 
 import java.util.*
 
-class VideoFrameQueue :java.lang.Object(){
+class FrameQueue :java.lang.Object(){
 
-    val queue = LinkedList<Frame>()
+    private val queue = LinkedList<Frame>()
 
     @Synchronized
     public fun addFrame(frame:Frame){
@@ -24,4 +24,10 @@ class VideoFrameQueue :java.lang.Object(){
         return queue.remove()
     }
 
+    @Synchronized
+    public fun clearQueue(){
+        queue.forEach {
+            it.setFlagsToTrue()
+        }
+    }
 }

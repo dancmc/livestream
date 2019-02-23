@@ -20,8 +20,8 @@ open class Connection(val socket:Socket) :Thread(){
            val line = inStream.readLine()
            println(line)
            val success = when(line){
-               "producer"->Control.getInstance().incomingStreamConnection(socket)
-//               "consumer"->
+               "producer"->Control.getInstance().newProducerConnection(socket)
+               "consumer"->Control.getInstance().newConsumerConnection(socket)
                else->false
            }
 
@@ -36,8 +36,9 @@ open class Connection(val socket:Socket) :Thread(){
     }
 
 
-    open fun writeBytes(bytes:ByteArray){
-        outStream.write(bytes)
+    open fun writeBytes(bytes:ByteArray, offset:Int = 0, length:Int = bytes.size){
+        outStream.write(bytes, offset, length)
         outStream.flush()
     }
+
 }

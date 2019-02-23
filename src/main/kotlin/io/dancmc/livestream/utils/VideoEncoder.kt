@@ -17,7 +17,7 @@ class VideoEncoder(val videoName:String) :Thread(){
     }
 
     lateinit var process:Process
-    val queue = VideoFrameQueue()
+    private val queue = FrameQueue()
     var term = false
 
     override fun run() {
@@ -48,7 +48,7 @@ class VideoEncoder(val videoName:String) :Thread(){
         while(!term){
             try {
                 val frame = queue.getFrame()
-                if(frame.extra == VIDEO_FRAME) {
+                if(frame.videoExtra == VIDEO_FRAME) {
                     stdin.write(frame.byteArray)
                     stdin.flush()
                     println("Wrote frame")
@@ -74,6 +74,9 @@ class VideoEncoder(val videoName:String) :Thread(){
 
     }
 
+    fun addFrameToQueue(frame:Frame){
+        queue.addFrame(frame)
+    }
 
 
 

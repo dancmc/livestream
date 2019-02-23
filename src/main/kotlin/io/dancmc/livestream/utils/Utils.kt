@@ -27,6 +27,9 @@ class Utils {
                 view.addToConsole(msg)
             }
         }
+
+
+
     }
 
 
