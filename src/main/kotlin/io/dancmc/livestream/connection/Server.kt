@@ -4,6 +4,7 @@ import io.dancmc.livestream.MainActivity
 import io.dancmc.livestream.utils.Utils
 import java.io.IOException
 import java.net.BindException
+import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 
@@ -40,8 +41,7 @@ class Server : Thread() {
         serverSocket?.use {ss->
 
             Control.getInstance().serverConnected()
-
-            Utils.log("Server :: Started listening on ${MainActivity.serverIP.value}:${MainActivity.serverPort.value}")
+            Utils.log("Server :: Started listening on ${InetAddress.getLocalHost().hostAddress}:${MainActivity.serverPort.value}")
 
             while (!term) {
                 val incomingSocket: Socket
