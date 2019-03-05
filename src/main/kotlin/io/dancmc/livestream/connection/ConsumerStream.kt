@@ -1,15 +1,21 @@
 package io.dancmc.livestream.connection
 
-import io.dancmc.livestream.gui.Gui
-import io.dancmc.livestream.utils.*
+import io.dancmc.livestream.utils.Frame
+import io.dancmc.livestream.utils.FrameQueue
+import io.dancmc.livestream.utils.Utils
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import tornadofx.find
-import java.io.IOException
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.Executors
 
+
+/**
+ * Specialised thread handling connection from a stream consumer. Primarily used to send received frames to a
+ * consumer application. Frames are enqueued for sending and sent as soon as possible.
+ */
 class ConsumerStream(socket: Socket) : Connection(socket) {
 
     companion object {
@@ -21,62 +27,61 @@ class ConsumerStream(socket: Socket) : Connection(socket) {
 
     override fun run() {
 
-        Utils.log("Starting consumer connection from ${socket.remoteSocketAddress}")
+        Utils.log("ConsumerStream :: Starting consumer connection from ${socket.remoteSocketAddress}")
         writeBytes("Connected successfully\n".toByteArray())
 
         socket.soTimeout = 0
+        Utils.log("ConsumerStream :: Started")
 
-        runBlocking {
-            launch {
-                try {
-                    while (!term) {
-                        val line = inStream.readLine()
-                        if(line!=null) {
-                            Utils.log("ConsumerStream || Read line : $line")
-                        }else {
-                            Utils.log("ConsumerStream || Read line : line is null")
-                        }
-                        if(line==null){
-                            term = true
-                            addFrameToQueue(Frame(ByteArray(1)).apply { this.flagExtra= FLAG_FINISHED })
-                        }
+
+        // Launch a separate thread to try and read from this connection.
+        // Necessary in order to detect connections which have been ended.
+        GlobalScope.launch(Executors.newSingleThreadExecutor().asCoroutineDispatcher()) {
+            try {
+                while (!term) {
+                    val line = inStream.readLine()
+                    if (line != null) {
+                        Utils.log("ConsumerStream :: Read line : $line")
+                    } else {
+                        Utils.log("ConsumerStream :: Read line : line is null")
                     }
-                }catch (e:Exception){
-                    Utils.log("Exception " + e.message)
+                    if (line == null) {
+                        term = true
+                        addFrameToQueue(Frame(ByteArray(1)).apply { this.flagExtra = FLAG_FINISHED })
+                    }
                 }
+            } catch (e: Exception) {
+                Utils.log("ConsumerStream :: Exception - ${e.message}")
             }
         }
 
-        while(!term){
 
+        // Get enqueued frames in order. Send the bytesize of the frame as a 4 byte int, then
+        // transmit the frame itself
+        while (!term) {
             val frame = queue.getFrame()
-            if(frame.flagExtra == FLAG_FINISHED){
+            if (frame.flagExtra == FLAG_FINISHED) {
                 break
             }
 
-            try{
-
-
+            try {
 
                 byteBuffer.clear()
                 byteBuffer.putInt(frame.readSize)
 
-                val a = byteBuffer.array()
-                Utils.log(""+frame.readSize)
-                Utils.log("${a[0]} ${a[1]} ${a[2]} ${a[3]}")
-
-                writeBytes(byteBuffer.array(),0,4)
+                writeBytes(byteBuffer.array(), 0, 4)
                 writeBytes(frame.byteArray, 0, frame.readSize)
 
             } catch (e: Exception) {
-                Utils.log("Exception " + e.message)
+                Utils.log("ConsumerStream :: Exception - ${e.message}" )
                 term = true
 
-            }finally {
+            } finally {
                 frame.sent = true
             }
         }
 
+        // Tell control to reflect a disconnection in the GUI
         Control.getInstance().disconnectConsumer()
         queue.clearQueue()
     }
@@ -89,9 +94,10 @@ class ConsumerStream(socket: Socket) : Connection(socket) {
         }
     }
 
-    fun addFrameToQueue(frame:Frame){
+    fun addFrameToQueue(frame: Frame) {
         queue.addFrame(frame)
     }
+
 
 
 }

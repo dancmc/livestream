@@ -5,6 +5,7 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
+// Test class
 class ServerText : Thread() {
 
     private val serverSocket = ServerSocket(7878)

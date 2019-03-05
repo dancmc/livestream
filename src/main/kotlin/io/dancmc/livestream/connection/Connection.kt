@@ -7,7 +7,12 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.net.Socket
 
-// Repsonsible for determining type of connection then telling control
+
+/**
+ * This is a basic connection thread. All connections start here, and are promoted to
+ * specialised consumer or producer threads based on first message transmitted. Basic
+ * authentication has been omitted in this demo.
+ */
 open class Connection(val socket:Socket) :Thread(){
 
     protected val inStream = DataInputStream(socket.getInputStream())
@@ -16,9 +21,11 @@ open class Connection(val socket:Socket) :Thread(){
 
     override fun run() {
        try {
-           println("Formed Connection")
+           Utils.log("Connection :: Formed Connection")
+
            val line = inStream.readLine()
-           println(line)
+           Utils.log("Connection :: Received type $line")
+
            val success = when(line){
                "producer"->Control.getInstance().newProducerConnection(socket)
                "consumer"->Control.getInstance().newConsumerConnection(socket)
@@ -31,7 +38,7 @@ open class Connection(val socket:Socket) :Thread(){
            }
 
        } catch(e:IOException){
-           Utils.log(e.message)
+           Utils.log("Connection :: Exception - ${e.message}")
        }
     }
 

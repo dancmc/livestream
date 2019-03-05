@@ -6,11 +6,6 @@ import tornadofx.find
 import tornadofx.runLater
 
 
-fun SimpleBooleanProperty.uiSet(b:Boolean){
-    runLater {
-        this.set(b)
-    }
-}
 
 class Utils {
 
@@ -28,11 +23,18 @@ class Utils {
             }
         }
 
-
+        @JvmStatic
+        fun validatePort(i:Int):Boolean{
+            return i in IntRange(1,65335)
+        }
 
     }
 
+}
 
-
-
+// Convenience extension for changing a single observable boolean
+fun SimpleBooleanProperty.uiSet(b:Boolean){
+    runLater {
+        this.set(b)
+    }
 }

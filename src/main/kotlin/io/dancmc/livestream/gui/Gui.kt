@@ -3,34 +3,38 @@ package io.dancmc.livestream.gui
 import io.dancmc.livestream.MainActivity
 import io.dancmc.livestream.connection.Control
 import io.dancmc.livestream.utils.Frame
-import io.dancmc.livestream.utils.FramePool
+import io.dancmc.livestream.utils.SSDP
 import io.dancmc.livestream.utils.Utils
+import javafx.animation.AnimationTimer
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
+import javafx.scene.control.TextArea
+import javafx.scene.control.ToggleGroup
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import tornadofx.*
 import java.io.ByteArrayInputStream
-import java.lang.Exception
 import java.text.NumberFormat
 import java.util.*
-import kotlin.math.min
-import javafx.animation.AnimationTimer
-import javafx.scene.control.*
 
 
+/**
+ * Class dealing with GUI
+ */
 class Gui : View() {
 
     companion object {
         // Minimum dimensions
-        val topHeight = 100.0
+        val topHeight = 165.0
         val imageMinHeight = 135.0
         val imageMinWidth = 240.0
-        val rightWidth = 200.0
+        val rightWidth = 220.0
         val bottomHeight = 200.0
         val stageMinHeight = topHeight + imageMinHeight + bottomHeight
         val stageMinWidth = imageMinWidth + rightWidth
@@ -58,6 +62,7 @@ class Gui : View() {
         /*
 
         Top
+        - label to indicate ssdp discovery service is running
         - label to indicate local address and port number entry & status of listening
         - label and button to disconnect sender
         - label and button to disconnect receiver
@@ -70,6 +75,7 @@ class Gui : View() {
         - bottom console log
 
          */
+
 
 
         top = vbox {
@@ -86,7 +92,37 @@ class Gui : View() {
             hbox {
 
                 alignment = Pos.CENTER_LEFT
-                spacing = 5.0
+                spacing = 8.0
+                padding = Insets(5.0)
+
+                label("SSDP Status")
+                circle {
+                    radius = 5.0
+                    fillProperty().bind(Bindings.`when`(MainActivity.ssdpRunning).then(Color.GREEN).otherwise(Color.RED))
+                    stroke = Color.BLACK
+
+                }
+
+                label("Multicast IP : ")
+                text (SSDP.ssdpIP)
+                label ("Port : ")
+                text ("${SSDP.ssdpPort}")
+
+                button("Restart SSDP"){
+                    action {
+                        try {
+                            Control.getInstance().startSSDP()
+                        }catch(e:Exception){
+                            Utils.log(e.message)
+                        }
+                    }
+                }
+            }
+
+            hbox {
+
+                alignment = Pos.CENTER_LEFT
+                spacing = 8.0
                 padding = Insets(5.0)
 
                 label("Server Status")
@@ -104,8 +140,13 @@ class Gui : View() {
                 button("Start Server"){
                     action {
                         try {
-                            MainActivity.serverPort.set(NumberFormat.getNumberInstance(Locale.US).parse(portField.text).toInt())
-                            Control.getInstance().startNewServer()
+                            val portNum = NumberFormat.getNumberInstance(Locale.US).parse(portField.text).toInt()
+                            if(Utils.validatePort(portNum)) {
+                                MainActivity.serverPort.set(portNum)
+                                Control.getInstance().startNewServer()
+                            } else {
+                                Utils.log("$portNum is not a valid port number")
+                            }
                         }catch(e:Exception){
                             Utils.log(e.message)
                         }
@@ -115,7 +156,7 @@ class Gui : View() {
 
             hbox{
                 alignment = Pos.CENTER_LEFT
-                spacing = 5.0
+                spacing = 8.0
                 padding = Insets(5.0)
 
                 label("Producer Status")
@@ -140,7 +181,7 @@ class Gui : View() {
 
             hbox{
                 alignment = Pos.CENTER_LEFT
-                spacing = 5.0
+                spacing = 8.0
                 padding = Insets(5.0)
 
                 label("Consumer Status")
@@ -200,6 +241,8 @@ class Gui : View() {
                 textProperty().bind(Bindings.`when`(selectedProperty()).then("Smooth Scaling ON").otherwise("Smooth Scaling OFF"))
             }
 
+            label {  }
+
             label("Auto Record :")
 
             hbox {
@@ -238,6 +281,8 @@ class Gui : View() {
 
 
             }
+
+            label {  }
 
             hbox{
                 alignment = Pos.CENTER_LEFT
@@ -307,7 +352,8 @@ class Gui : View() {
             console = textarea {
                 isEditable = false
                 hgrow = Priority.ALWAYS
-                vgrow = Priority.ALWAYS
+                minHeight = bottomHeight
+                maxHeight = bottomHeight
                 paddingBottom = 0.0
             }
         }
@@ -341,8 +387,8 @@ class Gui : View() {
         } else {
             val centreSize = getCentrePaneSize()
             val scale = calculateImageScale(centreSize.width, centreSize.height, image)
-            imageView.fitWidth = min(image.width-1.0, image.width * scale)
-            imageView.fitHeight = min(image.height-1.0, image.height * scale)
+            imageView.fitWidth = image.width * scale
+            imageView.fitHeight = image.height * scale
         }
     }
 
@@ -427,9 +473,6 @@ class Gui : View() {
 
 
             console.appendText("$line\n")
-
-
-
 
 //        scrollPosition.value = 0.0
 

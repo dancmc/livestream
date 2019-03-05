@@ -5,6 +5,7 @@ import io.dancmc.livestream.utils.Utils
 import java.io.IOException
 import java.net.Socket
 
+// Test class to help debugging
 class ConnectionText(socket:Socket) : Connection(socket){
 
 

@@ -3,12 +3,13 @@ package io.dancmc.livestream.connection
 import io.dancmc.livestream.MainActivity
 import io.dancmc.livestream.utils.Utils
 import java.io.IOException
-import java.lang.Exception
 import java.net.BindException
-import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 
+/**
+ * Simple server socket implementation to listen for connection requests
+ */
 class Server : Thread() {
 
     private var serverSocket : ServerSocket?=null
@@ -23,13 +24,16 @@ class Server : Thread() {
             try {
                 serverSocket = ServerSocket(MainActivity.serverPort.value)
                 listening = true
+
             }    catch(e:BindException){
-                Utils.log(e.message +" Port ${MainActivity.serverPort.value}")
+
+                // If unable to bind to port, increment port number and try 5 more times
+                Utils.log("Server :: Exception - "+e.message +" Port ${MainActivity.serverPort.value}")
                 triesRemaining--
                 MainActivity.serverPort.value +=2
 
             } catch (e:Exception){
-                Utils.log(e.message)
+                Utils.log("Server :: Exception - ${e.message}")
             }
         }
 
@@ -37,20 +41,21 @@ class Server : Thread() {
 
             Control.getInstance().serverConnected()
 
-            Utils.log("Started listening on ${MainActivity.serverIP.value}:${MainActivity.serverPort.value}")
+            Utils.log("Server :: Started listening on ${MainActivity.serverIP.value}:${MainActivity.serverPort.value}")
 
             while (!term) {
-                val clientSocket: Socket
+                val incomingSocket: Socket
                 try {
-                    // client socket could be a server or client connecting, but unknown which at this point
 
-                    clientSocket = ss.accept()
-                    Connection(clientSocket).start()
+                    // incoming client socket could be a server or client connecting, but unknown which at this point
+                    incomingSocket = ss.accept()
+                    // pass socket to basic Connection to read type
+                    Connection(incomingSocket).start()
 
                 } catch (e: IOException) {
+                    Utils.log("Server :: Exception - ${e.message}")
                     term = true
                 }
-
             }
         }
 

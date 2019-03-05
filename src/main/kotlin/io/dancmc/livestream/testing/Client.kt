@@ -5,7 +5,7 @@ import java.io.File
 import java.net.Socket
 
 
-// just a test class
+// Test class to help to debug server
 class Client : Thread() {
 
 

@@ -1,14 +1,16 @@
 package io.dancmc.livestream.utils
 
 import io.dancmc.livestream.MainActivity
-import java.io.File
-import java.io.OutputStreamWriter
-import java.io.BufferedWriter
-import java.io.InputStreamReader
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
-import java.util.*
+import java.io.File
+import java.io.InputStreamReader
+import java.util.concurrent.Executors
 
-
+// Video encoder class
 class VideoEncoder(val videoName:String) :Thread(){
 
     companion object {
@@ -17,8 +19,14 @@ class VideoEncoder(val videoName:String) :Thread(){
     }
 
     lateinit var process:Process
+    var stdoutJob : Job?=null
+
     private val queue = FrameQueue()
     var term = false
+    var framesWritten = 0
+
+
+
 
     override fun run() {
 
@@ -27,8 +35,17 @@ class VideoEncoder(val videoName:String) :Thread(){
             MainActivity.recordingStarted.uiSet(false)
         }
 
+        /*
+        Video is encoded at 24 fps.
+        Since stream is variable, this will result in a video not true to realtime. This can be mitigated by fixing
+        slightly lower framerate and selectively dropping frames, but this is non-trivial to get right.
+
+        Preset can be set to ultrafast (lower quality) for slower computers.
+         */
         val builder = ProcessBuilder("ffmpeg", "-y", "-f", "image2pipe","-vcodec", "mjpeg", "-r", "24", "-i", "-", "-vcodec", "libx264", "-preset","medium","-crf","24", "-r", "24", "$videoName.mp4")
 
+        // if directory /users/daniel/downloads exists, save video there, otherwise save video to directory where
+        // jar is located
         val downloads = File("/users/daniel/downloads")
         if(downloads.exists()){
             builder.directory(downloads)
@@ -40,35 +57,50 @@ class VideoEncoder(val videoName:String) :Thread(){
 
         val stdin = process.outputStream
         val stdout = process.inputStream
-        val scanner = Scanner(stdout)
 
-        val reader = BufferedReader(InputStreamReader(stdout))
-        val writer = BufferedWriter(OutputStreamWriter(stdin))
+        stdoutJob = GlobalScope.launch(Executors.newSingleThreadExecutor().asCoroutineDispatcher()) {
+
+
+            BufferedReader(InputStreamReader(stdout)).use {reader->
+                var line = reader.readLine()
+                while(line!=null){
+
+                    Utils.log("VideoEncoder :: Stdout - $line")
+                    line = reader.readLine()
+                }
+            }
+        }
+
 
         while(!term){
+            val frame = queue.getFrame()
+
             try {
-                val frame = queue.getFrame()
+
                 if(frame.videoExtra == VIDEO_FRAME) {
                     stdin.write(frame.byteArray)
                     stdin.flush()
-                    println("Wrote frame")
+
+
+                    framesWritten++
+                    if(framesWritten%30 == 0){
+                        Utils.log("VideoEncoder :: $framesWritten frames written")
+                    }
                 }
-                frame.encoded = true
 
 
             }catch(e:Exception){
-                println(e.message)
+                Utils.log("VideoEncoder :: Exception - ${e.message}")
+            }finally {
+                frame.encoded = true
             }
 
-
-            // move into coroutine?
-//            while (scanner.hasNextLine()) {
-//                System.out.println(scanner.nextLine())
-//            }
         }
 
-        stdin.write("q\n".toByteArray())
-        process.destroy()
+
+        Utils.log("VideoEncoder :: Closing")
+        stdin.close()
+        stdoutJob?.cancel()
 
         MainActivity.recordingStarted.uiSet(false)
 
